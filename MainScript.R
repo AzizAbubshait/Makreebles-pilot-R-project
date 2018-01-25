@@ -3,6 +3,11 @@
 # 2) get agency score
 # 3) get experience scores
 
+#### Library ####
+library(dplyr)
+
+#### Data Readin and 
 # agency questions:
 # experience questions:
 df <- read.csv("pilot data.csv")
+
