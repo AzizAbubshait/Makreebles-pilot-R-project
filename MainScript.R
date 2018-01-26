@@ -60,7 +60,7 @@ for (id in unique(df$ResponseId)){
       preexposed=0
     }
     quest=substr(name,6,nchar(name))
-    if (is.element(quest,c("fear","hunger","joy","pain","pleasure","desire","consciousness",
+    if (is.element(quest,c("fear","hunger","joy","pain","pleasure","desire",
                            "personality","conscious","rage","embarrass","pride"))) {
       scale="experience"
     }
