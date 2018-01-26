@@ -60,10 +60,12 @@ for (id in unique(df$ResponseId)){
       preexposed=0
     }
     quest=substr(name,6,nchar(name))
-    if (is.element(quest,c("fear","hunger","joy","pain","pleasure","desire"))) {
+    if (is.element(quest,c("fear","hunger","joy","pain","pleasure","desire","consciousness",
+                           "personality","conscious","rage","embarrass","pride"))) {
       scale="experience"
     }
-    if (is.element(quest,c("communication","morality","consciousness","emoRecog","planning","selfCont","conscious","personality","rage"))) {
+    if (is.element(quest,c("communication","morality","emoRecog","planning","selfCont",
+                           "thought", "memory" ))) {
       scale="agency"
     }
     answ=df[which(df$ResponseId==id),which(names(df)==name)]
