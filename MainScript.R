@@ -9,8 +9,9 @@ library(plyr)
 #### Data Readin ####
 # agency questions:
 # experience questions:
-df <- read.csv("pilot data.csv")
+df <- read.csv("makreebles data.csv")
 df=df[-1,]
+df <- df[df$Progress==100, ]
 
 #### Tidying up data frame: learning task ####
 id=NaN 
