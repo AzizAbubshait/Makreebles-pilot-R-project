@@ -70,3 +70,11 @@ df2.id.block=ddply(df2,.(id,block),summarise,
                    cor.pct=mean(cor))
 df2.block.ga=ddply(df2.id.block,.(block),summarise,
                    cor.pct=mean(cor.pct))
+
+
+######## Graphs
+library(ggplot2)
+
+ggplot(df2.id.block, aes(x=block, y=cor.pct, fill=block))+
+  geom_bar(stat="summary", fun.y="mean")+
+  geom_point(size=2)
