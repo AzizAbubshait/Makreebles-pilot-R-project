@@ -2,6 +2,7 @@
 # 1) calculate percentage for each block separately
 # 2) get agency score
 # 3) get experience scores
+# 4) @Aziz - check out labels
 
 #### Library ####
 library(plyr)
@@ -89,4 +90,5 @@ library(ggplot2)
 
 ggplot(df2.id.block, aes(x=block, y=cor.pct, fill=block))+
   geom_bar(stat="summary", fun.y="mean")+
-  geom_point(size=2)
+  geom_point(size=2)+
+  geom_jitter()
