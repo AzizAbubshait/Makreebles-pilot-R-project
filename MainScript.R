@@ -7,12 +7,29 @@
 #### Library ####
 library(plyr)
 library(car)
+library(ggplot2)
 
 #### Data Readin ####
 # agency questions:
 # experience questions:
 df <- read.csv("makreebles data.csv")
 df=df[-1,]
+df$Duration..in.seconds.=as.numeric(as.character(df$Duration..in.seconds.))
+
+#### Subject Exclusion ####
+# exclude subjects that did not finish the study
+n_aborted=length(which(df$Finished==F))
+n_finished=length(which(df$Finished==T))
+df=df[-which(df$Finished==F),]
+# exclude subjects that needed less then A and more than B minutes to complete the study
+sd_time=sd(df$Duration..in.seconds.)
+m_time=mean(df$Duration..in.seconds.)
+range_time=range(df$Duration..in.seconds.)
+A=600 #600 is 10 minutes. I think we should exclude 15 or less.
+B=m_time+2.5*sd_time
+n_timeoutlier=length(which(df$Duration..in.seconds.<A | df$Duration..in.seconds.>B))
+df=df[-which(df$Duration..in.seconds.<A | df$Duration..in.seconds.>B),]
+hist(df$Duration..in.seconds.)
 
 #### Tidying up data frame: learning task ####
 id=NaN 
@@ -20,7 +37,7 @@ block=NaN
 agent=NaN
 trial=NaN
 answ=NaN
-df2=data.frame(id,block,agent,trial,answ)
+df_learn=data.frame(id,block,agent,trial,answ)
 for (id in unique(df$ResponseId)){
   
   # Learning Task
@@ -34,12 +51,12 @@ for (id in unique(df$ResponseId)){
       trial=as.integer(substr(name,6,6))
     }
     answ=df[which(df$ResponseId==id),which(names(df)==name)]
-    df2=rbind(df2,c(id,block,agent,trial,as.character(answ)))
+    df_learn=rbind(df_learn,c(id,block,agent,trial,as.character(answ)))
   }
   
 }
-df2=df2[-1,]
-df2$cor=as.numeric(df2$agent==df2$answ)
+df_learn=df_learn[-1,]
+df_learn$cor=as.numeric(df_learn$agent==df_learn$answ)
 
 #### Tidying up data frame: ratings ####
 id=NaN 
@@ -48,7 +65,7 @@ preexposed=NaN
 quest=NaN
 scale=NaN
 answ=NaN
-df3=data.frame(id,agent,preexposed,quest,scale,answ)
+df_rating=data.frame(id,agent,preexposed,quest,scale,answ)
 for (id in unique(df$ResponseId)){
   
   # Ratings
@@ -70,25 +87,70 @@ for (id in unique(df$ResponseId)){
       scale="agency"
     }
     answ=df[which(df$ResponseId==id),which(names(df)==name)]
-    df3=rbind(df3,c(id,agent,preexposed,quest,scale,as.character(answ)))
+    df_rating=rbind(df_rating,c(id,agent,preexposed,quest,scale,as.character(answ)))
   }
 }
-df3=df3[-1,]
-df3$answ=as.numeric(recode(df3$answ,"'Extremely unlikely'=1;'Moderately unlikely'=2;'Slightly unlikely'=3;'Neither likely nor unlikely'=4;'Slightly likely'=5;'Moderately likely'=6;'Extremely likely'=7"))
+df_rating=df_rating[-1,]
+df_rating$answ=as.numeric(recode(df_rating$answ,"'Extremely unlikely'=1;'Moderately unlikely'=2;'Slightly unlikely'=3;'Neither likely nor unlikely'=4;'Slightly likely'=5;'Moderately likely'=6;'Extremely likely'=7"))
 
 #### data exploration ####
-df2.id.block=ddply(df2,.(id,block),summarise,
-                   cor.pct=mean(cor))
-df2.block.ga=ddply(df2.id.block,.(block),summarise,
-                   cor.pct=mean(cor.pct))
-df3.preexposed.scale=ddply(df3,.(preexposed,scale),summarise,
-                           rat=mean(answ,na.rm=T))
+df_learn_id_block=ddply(df_learn,.(id,block),summarise,
+                        cor=mean(cor))
+
+# add binary variably splitting the population in good and bad individuators (if are at least at the 50th percentile in block 5, thez are good learners!)
+hist(subset(df_learn_id_block,block==5)$cor,breaks=seq(0,1,.05))
+mean_cor_b5=mean(subset(df_learn_id_block,block==5)$cor)
+pct_cor_b5=quantile(subset(df_learn_id_block,block==5)$cor,.85)  # top 15%
+
+df_learn_id_block$goodlearner=NA
+for (ID in unique(df_learn_id_block$id)){
+df_learn_id_block$goodlearner[df_learn_id_block$id==ID]=df_learn_id_block$cor[df_learn_id_block$id==ID & df_learn_id_block$block==5]>=mean_cor_b5
+df_learn_id_block$amazinglearner[df_learn_id_block$id==ID]=df_learn_id_block$cor[df_learn_id_block$id==ID & df_learn_id_block$block==5]>=pct_cor_b5
+}
+
+df_learn_id=ddply(df_learn_id_block,.(id),summarise,
+                  cor=mean(cor),
+                  goodlearner=unique(goodlearner),
+                  amazinglearner=unique(amazinglearner))
+
+df_learn_block_ga=ddply(df_learn_id_block,.(block),summarise,
+                   cor=mean(cor))
+
+df_rating_id_scale_pre=ddply(df_rating,.(id,scale,preexposed),summarise,
+                         rat_n=sum(!is.na(answ)),
+                         rat_m=mean(answ,na.rm=T))
+
+# merge data frames
+df_id_scale_pre=merge(df_learn_id,df_rating_id_scale_pre,by.x="id")
+
+df_scale_pre_gl=ddply(df_id_scale_pre,.(preexposed,scale,goodlearner),summarise,
+                      rat_n=sum(!is.na(rat_m)), 
+                      rat_sd=sd(rat_m,na.rm=T),
+                      rat_se=rat_sd/sqrt(n),
+                      rat_m=mean(rat_m,na.rm=T))
+df_scale_pre_al=ddply(df_id_scale_pre,.(preexposed,scale,amazinglearner),summarise,
+                      rat_n=sum(!is.na(rat_m)), 
+                      rat_sd=sd(rat_m,na.rm=T),
+                      rat_se=rat_sd/sqrt(n),
+                      rat_m=mean(rat_m,na.rm=T))
 
 
 ######## Graphs
-library(ggplot2)
 
-ggplot(df2.id.block, aes(x=block, y=cor.pct, fill=block))+
+ggplot(df_learn_id_block, aes(x=block, y=cor, fill=block))+
   geom_bar(stat="summary", fun.y="mean")+
   geom_point(size=2)+
   geom_jitter()
+<<<<<<< HEAD
+=======
+
+ggplot(df_scale_pre_gl,aes(scale,rat_m,fill=preexposed))+
+  geom_bar(stat='identity',position = position_dodge())+
+  geom_errorbar(aes(ymin=rat_m-rat_se,ymax=rat_m+rat_se),position = position_dodge())+
+  facet_grid(goodlearner~.,labeller=label_both)
+ggplot(df_scale_pre_al,aes(scale,rat_m,fill=preexposed))+
+  geom_bar(stat='identity',position = position_dodge())+
+  geom_errorbar(aes(ymin=rat_m-rat_se,ymax=rat_m+rat_se),position = position_dodge())+
+  facet_grid(amazinglearner~.,labeller=label_both)
+       
+>>>>>>> 44306584151a48da9baa5cc42062b10e8db3ded4
