@@ -2,7 +2,6 @@
 # 1) calculate percentage for each block separately
 # 2) get agency score
 # 3) get experience scores
-# 4) @Aziz - check out labels
 
 #### Library ####
 library(plyr)
