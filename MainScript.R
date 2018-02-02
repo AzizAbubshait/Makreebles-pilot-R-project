@@ -25,11 +25,12 @@ df=df[-which(df$Finished==F),]
 sd_time=sd(df$Duration..in.seconds.)
 m_time=mean(df$Duration..in.seconds.)
 range_time=range(df$Duration..in.seconds.)
-A=600
-B=m_time+2.5*sd_time
+A=720
+B=2700
+# B=m_time+2*sd_time
 n_timeoutlier=length(which(df$Duration..in.seconds.<A | df$Duration..in.seconds.>B))
 df=df[-which(df$Duration..in.seconds.<A | df$Duration..in.seconds.>B),]
-hist(df$Duration..in.seconds.)
+hist(df$Duration..in.seconds.,breaks=seq(500,2700,250))
 
 #### Tidying up data frame: learning task ####
 id=NaN 
@@ -92,6 +93,7 @@ for (id in unique(df$ResponseId)){
 }
 df_rating=df_rating[-1,]
 df_rating$answ=as.numeric(recode(df_rating$answ,"'Extremely unlikely'=1;'Moderately unlikely'=2;'Slightly unlikely'=3;'Neither likely nor unlikely'=4;'Slightly likely'=5;'Moderately likely'=6;'Extremely likely'=7"))
+df_rating=df_rating[-which(df_rating$agent=="F1B2"),]
 
 #### data exploration ####
 df_learn_id_block=ddply(df_learn,.(id,block),summarise,
@@ -126,12 +128,12 @@ df_id_scale_pre=merge(df_learn_id,df_rating_id_scale_pre,by.x="id")
 df_scale_pre_gl=ddply(df_id_scale_pre,.(preexposed,scale,goodlearner),summarise,
                       rat_n=sum(!is.na(rat_m)), 
                       rat_sd=sd(rat_m,na.rm=T),
-                      rat_se=rat_sd/sqrt(n),
+                      rat_se=rat_sd/sqrt(rat_n),
                       rat_m=mean(rat_m,na.rm=T))
 df_scale_pre_al=ddply(df_id_scale_pre,.(preexposed,scale,amazinglearner),summarise,
                       rat_n=sum(!is.na(rat_m)), 
                       rat_sd=sd(rat_m,na.rm=T),
-                      rat_se=rat_sd/sqrt(n),
+                      rat_se=rat_sd/sqrt(rat_n),
                       rat_m=mean(rat_m,na.rm=T))
 
 
@@ -150,4 +152,11 @@ ggplot(df_scale_pre_al,aes(scale,rat_m,fill=preexposed))+
   geom_bar(stat='identity',position = position_dodge())+
   geom_errorbar(aes(ymin=rat_m-rat_se,ymax=rat_m+rat_se),position = position_dodge())+
   facet_grid(amazinglearner~.,labeller=label_both)
+
+
+
+
+df_rating_fix_excel=ddply(df_rating,.(agent,quest),summarise,
+                          n=sum(!is.na(answ)))
+
        
