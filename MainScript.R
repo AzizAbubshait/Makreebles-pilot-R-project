@@ -155,7 +155,5 @@ ggplot(df_scale_pre_al,aes(scale,rat_m,fill=preexposed))+
   facet_grid(amazinglearner~.,labeller=label_both)
 
 
-
-
 df_rating_fix_excel=ddply(df_rating,.(agent,quest),summarise,
                           n=sum(!is.na(answ)))
