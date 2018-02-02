@@ -28,6 +28,8 @@ range_time=range(df$Duration..in.seconds.)
 A=720
 B=2700
 # B=m_time+2*sd_time
+  A=600 #600 is 10 minutes. I think we should exclude 15 or less.
+B=m_time+2.5*sd_time
 n_timeoutlier=length(which(df$Duration..in.seconds.<A | df$Duration..in.seconds.>B))
 df=df[-which(df$Duration..in.seconds.<A | df$Duration..in.seconds.>B),]
 hist(df$Duration..in.seconds.,breaks=seq(500,2700,250))
@@ -106,8 +108,8 @@ pct_cor_b5=quantile(subset(df_learn_id_block,block==5)$cor,.85)  # top 15%
 
 df_learn_id_block$goodlearner=NA
 for (ID in unique(df_learn_id_block$id)){
-df_learn_id_block$goodlearner[df_learn_id_block$id==ID]=df_learn_id_block$cor[df_learn_id_block$id==ID & df_learn_id_block$block==5]>=mean_cor_b5
-df_learn_id_block$amazinglearner[df_learn_id_block$id==ID]=df_learn_id_block$cor[df_learn_id_block$id==ID & df_learn_id_block$block==5]>=pct_cor_b5
+  df_learn_id_block$goodlearner[df_learn_id_block$id==ID]=df_learn_id_block$cor[df_learn_id_block$id==ID & df_learn_id_block$block==5]>=mean_cor_b5
+  df_learn_id_block$amazinglearner[df_learn_id_block$id==ID]=df_learn_id_block$cor[df_learn_id_block$id==ID & df_learn_id_block$block==5]>=pct_cor_b5
 }
 
 df_learn_id=ddply(df_learn_id_block,.(id),summarise,
@@ -116,11 +118,11 @@ df_learn_id=ddply(df_learn_id_block,.(id),summarise,
                   amazinglearner=unique(amazinglearner))
 
 df_learn_block_ga=ddply(df_learn_id_block,.(block),summarise,
-                   cor=mean(cor))
+                        cor=mean(cor))
 
 df_rating_id_scale_pre=ddply(df_rating,.(id,scale,preexposed),summarise,
-                         rat_n=sum(!is.na(answ)),
-                         rat_m=mean(answ,na.rm=T))
+                             rat_n=sum(!is.na(answ)),
+                             rat_m=mean(answ,na.rm=T))
 
 # merge data frames
 df_id_scale_pre=merge(df_learn_id,df_rating_id_scale_pre,by.x="id")
@@ -143,7 +145,6 @@ ggplot(df_learn_id_block, aes(x=block, y=cor, fill=block))+
   geom_bar(stat="summary", fun.y="mean")+
   geom_point(size=2)+
   geom_jitter()
-
 ggplot(df_scale_pre_gl,aes(scale,rat_m,fill=preexposed))+
   geom_bar(stat='identity',position = position_dodge())+
   geom_errorbar(aes(ymin=rat_m-rat_se,ymax=rat_m+rat_se),position = position_dodge())+
@@ -158,5 +159,3 @@ ggplot(df_scale_pre_al,aes(scale,rat_m,fill=preexposed))+
 
 df_rating_fix_excel=ddply(df_rating,.(agent,quest),summarise,
                           n=sum(!is.na(answ)))
-
-       
