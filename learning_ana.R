@@ -10,6 +10,8 @@ library(ggplot2)
 
 #### Settings ####
 exp_mat=c("maki","hum_w","hum_b")
+only_white=0
+only_black=1
 
 for (exp in exp_mat){
 #### Data Readin ####
@@ -17,10 +19,10 @@ for (exp in exp_mat){
     df <- read.csv("dat_maki_edit.csv")
     }
   if (exp=="hum_w"){
-    df <- read.csv("dat_white_edit.csv")
+    df <- read.csv("dat_white_edit_2.csv")
     }
   if (exp=="hum_b"){
-    df <- read.csv("dat_black_edit.csv")
+    df <- read.csv("dat_black_edit_2.csv")
     }
 df=df[-1,]
 df$Duration..in.seconds.=as.numeric(as.character(df$Duration..in.seconds.))
@@ -82,6 +84,12 @@ df_learn_all=df_learn
 
 }
 
+if (only_white==1){
+  df_learn_all=subset(df_learn_all,eth=="White")
+}
+if (only_black==1){
+  df_learn_all=subset(df_learn_all,eth=="Black or African American")
+}
 
 #### functions ####
 agg_n <- function(x)
